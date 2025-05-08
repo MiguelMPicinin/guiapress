@@ -1,26 +1,32 @@
 const express = require("express");
 const router = express.Router();
+const Category = require("../categories/Category")
 const Articles = require("./Articles");
 const slugify = require("slugify");
 
-// Rota para formulário de nova artigo
+// Rota para formulário de nova artigo (corrigido)
 router.get("/admin/articles/new", (req, res) => {
-    res.render("admin/articles/new");
+    Category.findAll().then(categories => {
+        res.render("admin/articles/new", { categories });
+    }).catch(err => {
+        console.error("Erro ao carregar categorias:", err);
+        res.redirect("/admin/articles")
+    })
 });
 
-// Rota para salvar artigo
+// Rota para salvar artigo (corrigido)
 router.post("/articles/save", (req, res) => {
-    const title = req.body.title;
-    console.log("Título recebido:", title);
-    const body = req.body.body
+    const { title, body, category } = req.body;
 
-    if (title != undefined && title.trim() !== "") {
+    console.log("Dados Recebidos: ", title, body, category);
+
+    if (title && body && category) {
         Articles.create({
             title: title,
             slug: slugify(title),
-            body: body
-        }).then(Articles => {
-            console.log("artigo salva:", Articles);
+            body: body,
+            categoryId: category
+        }).then(() => {
             res.redirect("/admin/articles");
         }).catch(err => {
             console.error("Erro ao salvar artigo:", err);
@@ -33,8 +39,9 @@ router.post("/articles/save", (req, res) => {
 
 // Rota para listagem de artigos
 router.get("/admin/articles", (req, res) => {
-    Articles.findAll().then(articles => {
-        console.log("artigos encontradas:", articles);
+    Articles.findAll({
+        include: [{model: Category}]
+    }).then(articles => {
         res.render("admin/articles/index", { articles });
     }).catch(err => {
         console.error("Erro ao buscar artigos:", err);
@@ -42,7 +49,7 @@ router.get("/admin/articles", (req, res) => {
     });
 });
 
-// Rota para deletar uma artigo
+// Rota para deletar uma artigo (corrigido)
 router.post("/articles/delete", (req, res) => {
     const id = req.body.id;
 
