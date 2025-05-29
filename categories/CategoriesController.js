@@ -5,15 +5,20 @@ const slugify = require("slugify");
 
 // Rota para formulário de nova categoria
 router.get("/admin/categories/new", (req, res) => {
-    res.render("admin/categories/new");
+    Category.findAll().then(categories => { // Busque todas as categorias
+        res.render("admin/categories/new", { categories: categories }); // Passe as categorias para a view
+    }).catch(err => {
+        console.error("Erro ao buscar categorias para o formulário:", err);
+        res.render("admin/categories/new", { categories: [] }); // Em caso de erro, passe um array vazio para evitar o erro na navbar
+    });
 });
 
 // Rota para salvar categoria
 router.post("/categories/save", (req, res) => {
-    const title = req.body.title;
+    var title = req.body.title;
     console.log("Título recebido:", title);
 
-    if (title != undefined && title.trim() !== "") {
+    if(title != undefined && title.trim() !== "") {
         Category.create({
             title: title,
             slug: slugify(title)
@@ -42,7 +47,7 @@ router.get("/admin/categories", (req, res) => {
 
 // Rota para deletar uma categoria
 router.post("/categories/delete", (req, res) => {
-    const id = req.body.id;
+    var id = req.body.id;
 
     if (id != undefined && !isNaN(id)) {
         Category.destroy({
@@ -59,7 +64,7 @@ router.post("/categories/delete", (req, res) => {
     }
 });
 
-//Localizar dados para editar
+//localizar dados para editar
 
 router.get("/admin/categories/edit/:id", (req,res) => {
     var id = req.params.id;
@@ -67,16 +72,16 @@ router.get("/admin/categories/edit/:id", (req,res) => {
     Category.findByPk(id).then(category => {
         if(category !=undefined){
             res.render("admin/categories/edit",{category: category});
-        } else{
+        }else{
             res.redirect("/admin/categories");
         }
-    }).catch(error => {
+    }).catch(erro => {
         res.redirect("/admin/categories");
     })
 })
 
 //salvar edição
-router.post("/categories/update", (req, res) => {
+router.post("/categories/update", (req,res) => {
     var id = req.body.id
     var title = req.body.title;
 
@@ -85,13 +90,12 @@ router.post("/categories/update", (req, res) => {
         slug: slugify(title)
     },{
         where: {
-            id:id
+            id: id
 
         }
     }).then(() => {
-        res.redirect("/admin/categories")
+        res.redirect("/admin/categories");
     })
-
 })
 
 module.exports = router;
